@@ -11,9 +11,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.giahung19.ecommerce_api.service.*;
+import jakarta.validation.Valid;
 import tools.jackson.databind.json.JsonMapper;
-import com.giahung19.ecommerce_api.entity.*;
 import java.util.*;
+import com.giahung19.ecommerce_api.dto.CategoryRequestDTO;
+import com.giahung19.ecommerce_api.dto.CategoryResponseDTO;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 
 @RestController 
 @RequestMapping ("/api/categories")
@@ -28,47 +34,48 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> findAll(){
-        return categoryService.findAll();
+    public ResponseEntity<List<CategoryResponseDTO>> findAll(){
+        List<CategoryResponseDTO> list=categoryService.findAll();
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping ("/{id}")
-    public Category findById(@PathVariable Long id){
-        return categoryService.findById(id);
+    public ResponseEntity<CategoryResponseDTO> findById(@PathVariable Long id){
+        CategoryResponseDTO categoryResponseDTO =categoryService.findById(id);
+        return ResponseEntity.ok(categoryResponseDTO);
     }
 
     @PostMapping
-    public Category createCategory(@RequestBody Category category){
-        category.setId(null);
-        return categoryService.save(category);
+    public ResponseEntity<CategoryResponseDTO> createCategory(@Valid @RequestBody CategoryRequestDTO requestDTO) {
+        CategoryResponseDTO createCategory =categoryService.save(requestDTO);
+        return new ResponseEntity<>(createCategory,HttpStatus.CREATED);
     }
 
     @PutMapping ("/{id}")
-    public Category updateCategory(@RequestBody Category category){
-        return categoryService.save(category);
+    public ResponseEntity<CategoryResponseDTO> updateCategory(@PathVariable Long id,@Valid @RequestBody CategoryRequestDTO requestDTO){
+        CategoryResponseDTO updateCategory =categoryService.update(id, requestDTO);
+        return ResponseEntity.ok(updateCategory);
     }
 
-    @PatchMapping ("/{id}")
-    public Category patchCategory(@PathVariable Long id,@RequestBody Map<String,Object> patchPayload){
-        Category category =categoryService.findById(id);
-        if(category==null){
-            throw new RuntimeException("Not found category with id: "+id);
+    @PatchMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> patchCategory(@PathVariable Long id,@RequestBody Map<String, Object> patchPayload) {
+        
+        if (patchPayload.containsKey("id")) {
+            throw new RuntimeException("Category id not allowed in request body");
         }
-        if(patchPayload.containsKey("id")){
-            throw new RuntimeException("Category id not allow in request body");
-        }
-        Category patchedCategory =jsonMapper.updateValue(category,patchPayload);
-        return categoryService.save(patchedCategory);
+
+        CategoryResponseDTO currentDTO = categoryService.findById(id);
+        CategoryResponseDTO patchedDTO = jsonMapper.updateValue(currentDTO, patchPayload);
+        CategoryRequestDTO requestDTO = new CategoryRequestDTO(patchedDTO.getName(), patchedDTO.getDescription());
+        CategoryResponseDTO updatedCategory = categoryService.update(id, requestDTO);
+        return ResponseEntity.ok(updatedCategory);
     }   
 
-    @DeleteMapping ("/{id}")
-    public String deleteCategory(@PathVariable Long id){
-        Category category =categoryService.findById(id);
-        if(category==null){
-            throw new RuntimeException("Not found category with id: "+id);
-        }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteCategory(@PathVariable Long id) {
+        categoryService.findById(id);
         categoryService.deleteById(id);
-        return "Delete category with id: "+id;
+        return ResponseEntity.ok("Deleted category with id: " + id);
     }
 
 }

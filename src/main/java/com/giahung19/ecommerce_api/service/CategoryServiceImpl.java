@@ -5,6 +5,11 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import com.giahung19.ecommerce_api.entity.*;
 import com.giahung19.ecommerce_api.repository.CategoryRepository;
+import com.giahung19.ecommerce_api.dto.CategoryRequestDTO;
+import com.giahung19.ecommerce_api.dto.CategoryResponseDTO;
+
+
+
 
 
 @Service 
@@ -17,22 +22,54 @@ public class CategoryServiceImpl implements CategoryService {
         this.categoryRepository=categoryRepository;
     }
 
+    private CategoryResponseDTO convertToResponseDTO(Category category){
+        CategoryResponseDTO dto =new CategoryResponseDTO();
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        dto.setDescription(category.getDescription());
+        return dto;
+    }
+
     // CRUD 
 
     // find all
-    public List<Category> findAll(){
-        return categoryRepository.findAll();
-    }  
+    @Override
+    public List<CategoryResponseDTO> findAll() {
+        List<Category> categories = categoryRepository.findAll();
+        return categories.stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
+ 
 
     // find 
-    public Category findById(Long id){
-        return categoryRepository.findById(id)
+    public CategoryResponseDTO findById(Long id){
+        Category category= categoryRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Not found category with id: " + id));
+        return convertToResponseDTO(category);
     }
     
     // save 
-    public Category save(Category category){
-        return categoryRepository.save(category);
+    public CategoryResponseDTO save(CategoryRequestDTO requestDTO){
+        Category category=new Category();
+        category.setName(requestDTO.getName());
+        category.setDescription(requestDTO.getDescription());
+
+        Category savedDB=categoryRepository.save(category);
+
+        return convertToResponseDTO(savedDB);
+    }
+
+    // update 
+    public CategoryResponseDTO update(Long id, CategoryRequestDTO requestDTO) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found category with id: " + id));
+
+        category.setName(requestDTO.getName());
+        category.setDescription(requestDTO.getDescription());
+
+        Category updatedCategory = categoryRepository.save(category);
+        return convertToResponseDTO(updatedCategory);
     }
 
     // delete 
