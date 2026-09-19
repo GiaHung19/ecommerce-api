@@ -1,12 +1,14 @@
 package com.giahung19.ecommerce_api.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.giahung19.ecommerce_api.dto.*;
 import com.giahung19.ecommerce_api.service.ProductService;
+import jakarta.validation.Valid;
 import tools.jackson.databind.json.JsonMapper;
 import java.util.*;
-import com.giahung19.ecommerce_api.entity.*;
 
 
 
@@ -24,48 +26,48 @@ public class ProductController {
     }
 
     @GetMapping 
-    public List<Product> findAll(){
-        return productService.findAll();
+     public ResponseEntity<List<ProductResponseDTO>> findAll(){
+        List<ProductResponseDTO> list=productService.findAll();
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping ("/{id}")
-    public Product findById(@PathVariable Long id){
-        return productService.findById(id);
+    public ResponseEntity<ProductResponseDTO> findById(@PathVariable Long id){
+        ProductResponseDTO productResponseDTO =productService.findById(id);
+        return ResponseEntity.ok(productResponseDTO);
     }
 
     @PostMapping 
-    public Product createProduct(@RequestBody Product product){
-        product.setId(null);
-        return productService.save(product);
+    public ResponseEntity<ProductResponseDTO> createProduct(@Valid @RequestBody ProductRequestDTO requestDTO) {
+        ProductResponseDTO createProduct =productService.save(requestDTO);
+        return new ResponseEntity<>(createProduct,HttpStatus.CREATED);
     }
 
     @PutMapping ("/{id}")
-    public Product updateProduct(@PathVariable Long id,@RequestBody Product product){
-        product.setId(id);
-        return productService.save(product);
+    public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable Long id,@Valid @RequestBody ProductRequestDTO requestDTO){
+        ProductResponseDTO updateProduct =productService.update(id, requestDTO);
+        return ResponseEntity.ok(updateProduct);
     }
 
-    @PatchMapping ("/{id}")
-    public Product patchProduct(@PathVariable Long id,@RequestBody Map<String,Object> patchPayload){
-        Product product =productService.findById(id);
-        if(product ==null){
-            throw new RuntimeException("Not found product with id: "+id);
+    @PatchMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> patchProduct(@PathVariable Long id,@RequestBody Map<String, Object> patchPayload) {
+        
+        if (patchPayload.containsKey("id")) {
+            throw new RuntimeException("Product id not allowed in request body");
         }
-        if(patchPayload.containsKey("id")){
-            throw new RuntimeException("Product id not allow in request body");
-        }
-        Product patchedProduct =jsonMapper.updateValue(product,patchPayload);
-        return productService.save(patchedProduct);
-    }
+
+        ProductResponseDTO currentDTO = productService.findById(id);
+        ProductResponseDTO patchedDTO = jsonMapper.updateValue(currentDTO, patchPayload);
+        ProductRequestDTO requestDTO = new ProductRequestDTO(patchedDTO.getCategoryId(),patchedDTO.getName(),patchedDTO.getPrice(),patchedDTO.getStockQuantity());
+        ProductResponseDTO updatedCategory = productService.update(id, requestDTO);
+        return ResponseEntity.ok(updatedCategory);
+    }  
 
     @DeleteMapping ("/{id}")
-    public String deleteProduct(@PathVariable Long id){
-        Product product=productService.findById(id);
-        if(product == null){
-            throw new RuntimeException("Not found product with id: ");
-        }
+    public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
+        productService.findById(id);
         productService.deleteById(id);
-        return "Deleted product with id: "+id;
+        return ResponseEntity.ok("Deleted product with id: " + id);
     }
 
 

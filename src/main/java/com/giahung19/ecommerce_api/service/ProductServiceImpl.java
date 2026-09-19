@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import com.giahung19.ecommerce_api.entity.*;
 import com.giahung19.ecommerce_api.repository.*;
+import com.giahung19.ecommerce_api.dto.*;
 
 
 
@@ -14,33 +15,69 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
+
     @Autowired 
-    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository){
+    public ProductServiceImpl(ProductRepository productRepository,CategoryRepository categoryRepository){
         this.productRepository=productRepository;
         this.categoryRepository=categoryRepository;
     } 
 
-    public List<Product> findAll(){
-        return productRepository.findAll();
-    }
+    private ProductResponseDTO convertToResponseDTO(Product product){
+        ProductResponseDTO dto =new ProductResponseDTO();
 
-    public Product findById(Long id){
-        return productRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Not found product with id: "+id));
-    }
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setPrice(product.getPrice());
+        dto.setStockQuantity(product.getStockQuantity());
 
-    public Product save(Product product){
-       // Kiểm tra tính hợp lệ của Category trước khi lưu Product
-        if (product.getCategory() == null || product.getCategory().getId() == null) {
-            throw new RuntimeException("Product must belong to a valid Category");
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId());
         }
+        return dto;
+    }
 
-        Long categoryId = product.getCategory().getId();
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Cannot save product. Category not found with id: " + categoryId));
+    public List<ProductResponseDTO> findAll(){
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .map(this::convertToResponseDTO)
+                .toList();
+    }
 
+    public ProductResponseDTO findById(Long id){
+        Product product= productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Not found product with id: "+id));
+        return convertToResponseDTO(product);
+    }
+
+    public ProductResponseDTO save(ProductRequestDTO requestDTO){
+        Category category =categoryRepository.findById(requestDTO.getCategoryId())
+            .orElseThrow(() -> new RuntimeException("Not found category with id: "+requestDTO.getCategoryId()));
+        
+        Product product=new Product();
+        product.setName(requestDTO.getName());
+        product.setPrice(requestDTO.getPrice());
+        product.setStockQuantity(requestDTO.getStockQuantity());
         product.setCategory(category);
-        return productRepository.save(product);
+        
+        Product savedDB=productRepository.save(product);
+
+        return convertToResponseDTO(savedDB);
+    }
+
+    public ProductResponseDTO update(Long id, ProductRequestDTO requestDTO){
+        Product product= productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Not found product with id: "+id));
+        
+        Category category = categoryRepository.findById(requestDTO.getCategoryId())
+            .orElseThrow(() -> new RuntimeException("Category not found with id: " + requestDTO.getCategoryId()));
+            
+        product.setName(requestDTO.getName());
+        product.setPrice(requestDTO.getPrice());
+        product.setStockQuantity(requestDTO.getStockQuantity());
+        product.setCategory(category);
+
+        Product savedDB=productRepository.save(product);
+        return convertToResponseDTO(savedDB);
     }
 
     public void deleteById(Long id){

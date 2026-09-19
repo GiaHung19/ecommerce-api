@@ -9,7 +9,7 @@ public class CategoryResponseDTO {
 
     private String description;
 
-     public CategoryResponseDTO() {}
+    public CategoryResponseDTO() {}
 
     public CategoryResponseDTO(Long id,String name, String description) {
         this.id=id;

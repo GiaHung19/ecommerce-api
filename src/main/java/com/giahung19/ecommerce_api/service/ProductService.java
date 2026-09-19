@@ -1,14 +1,12 @@
 package com.giahung19.ecommerce_api.service;
 
-import com.giahung19.ecommerce_api.entity.Product;
 import java.util.*;
-
-
-
+import com.giahung19.ecommerce_api.dto.*;
 
 public interface ProductService {
-    List<Product> findAll();
-    Product findById(Long id);
-    Product save(Product product);
+    List<ProductResponseDTO> findAll();
+    ProductResponseDTO findById(Long id);
+    ProductResponseDTO save(ProductRequestDTO requestDTO);
+    ProductResponseDTO update(Long id, ProductRequestDTO requestDTO);
     void deleteById(Long id);
 }

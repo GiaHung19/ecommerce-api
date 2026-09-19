@@ -9,7 +9,7 @@ public class CategoryRequestDTO {
 
     private String description;
 
-     public CategoryRequestDTO() {}
+    public CategoryRequestDTO() {}
 
     public CategoryRequestDTO(String name, String description) {
         this.name = name;
