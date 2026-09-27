@@ -2,10 +2,13 @@ package com.giahung19.ecommerce_api.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.*;
 import com.giahung19.ecommerce_api.entity.*;
 import com.giahung19.ecommerce_api.repository.*;
 import com.giahung19.ecommerce_api.dto.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 
 
@@ -36,11 +39,13 @@ public class ProductServiceImpl implements ProductService {
         return dto;
     }
 
-    public List<ProductResponseDTO> findAll(){
-        List<Product> products = productRepository.findAll();
-        return products.stream()
-                .map(this::convertToResponseDTO)
-                .toList();
+    public Page<ProductResponseDTO> findAll(int page,int size,String sortBy,String sortDir){
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) 
+            ? Sort.by(sortBy).ascending() 
+            : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Product> productPage = productRepository.findAll(pageable);
+        return productPage.map(this::convertToResponseDTO);
     }
 
     public ProductResponseDTO findById(Long id){

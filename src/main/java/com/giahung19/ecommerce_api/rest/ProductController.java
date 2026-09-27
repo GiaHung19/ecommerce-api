@@ -9,6 +9,7 @@ import com.giahung19.ecommerce_api.service.ProductService;
 import jakarta.validation.Valid;
 import tools.jackson.databind.json.JsonMapper;
 import java.util.*;
+import org.springframework.data.domain.Page;
 
 
 
@@ -26,9 +27,14 @@ public class ProductController {
     }
 
     @GetMapping 
-     public ResponseEntity<List<ProductResponseDTO>> findAll(){
-        List<ProductResponseDTO> list=productService.findAll();
-        return ResponseEntity.ok(list);
+     public ResponseEntity<Page<ProductResponseDTO>> findAll(
+        @RequestParam (defaultValue = "0") int page,
+        @RequestParam (defaultValue = "10") int size,
+        @RequestParam (defaultValue = "id") String SortBy,
+        @RequestParam (defaultValue = "asc") String SortDir){
+        
+        Page<ProductResponseDTO> products =productService.findAll(page, size, SortBy, SortDir);
+        return ResponseEntity.ok(products);
     }
 
     @GetMapping ("/{id}")
